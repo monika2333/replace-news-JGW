@@ -125,25 +125,16 @@ def build_output(header: str, sections: List[Tuple[str, List[str]]]) -> str:
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Reorder brief entries in a text file by category: 市委教委 -> 中小学 -> 高校 -> 其他.",
+        description="Reorder brief entries in a text file by category order.",
     )
     parser.add_argument("input", type=Path, help="Path to the source text file (e.g. 1008ZM.txt).")
     parser.add_argument(
         "-o",
         "--output",
         type=Path,
-        help="Optional output path. Defaults to <input_stem>_sorted<suffix>.",
+        help="Optional output path. Defaults to overwriting the input file.",
     )
-    parser.add_argument(
-        "--in-place",
-        action="store_true",
-        help="Overwrite the input file with reordered content.",
-    )
-    args = parser.parse_args(argv)
-    if args.in_place and args.output:
-        parser.error("--in-place cannot be used together with --output.")
-    return args
-
+    return parser.parse_args(argv)
 
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
@@ -172,11 +163,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         breakdown = ", ".join(f"{category}:{counts.get(category, 0)}" for category in CATEGORY_ORDER)
         print(f"{heading} -> {breakdown}")
 
-    output_path = (
-        input_path
-        if args.in_place
-        else args.output or input_path.with_name(f"{input_path.stem}_sorted{input_path.suffix}")
-    )
+    output_path = args.output or input_path
 
     output_text = build_output(header, reordered_sections)
     output_path.write_text(output_text, encoding="utf-8")

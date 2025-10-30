@@ -34,7 +34,8 @@ CATEGORY_RULES: Sequence[Tuple[str, Tuple[str, ...]]] = (
             "托育",
             "K12",
             "班主任",
-            "青少年"
+            "青少年",
+            "少儿"
         ),
     ),
     (

@@ -85,20 +85,30 @@ def number_news_items(lines: Sequence[str]) -> Tuple[List[str], int]:
 
         if is_news_title:
             news_counter += 1
-            if not re.match(r"^[一二三四五六七八九十]+、", stripped_line):
-                added_count += 1
-                if raw_line.endswith("\r\n"):
-                    newline = "\r\n"
-                elif raw_line.endswith("\n"):
-                    newline = "\n"
-                elif raw_line.endswith("\r"):
-                    newline = "\r"
-                else:
-                    newline = "\n"
-                numbered_line = f"{chinese_number(news_counter)}、{stripped_line}{newline}"
-                new_lines.append(numbered_line)
+
+            # 检查是否已有序号前缀
+            existing_number_match = re.match(r"^[一二三四五六七八九十]+、", stripped_line)
+
+            # 总是重新编号（无论是否已有序号）
+            if raw_line.endswith("\r\n"):
+                newline = "\r\n"
+            elif raw_line.endswith("\n"):
+                newline = "\n"
+            elif raw_line.endswith("\r"):
+                newline = "\r"
             else:
-                new_lines.append(raw_line)
+                newline = "\n"
+
+            # 移除原有的序号前缀（如果存在）
+            if existing_number_match:
+                content_start = existing_number_match.end()
+                content = stripped_line[content_start:]
+            else:
+                content = stripped_line
+                added_count += 1
+
+            numbered_line = f"{chinese_number(news_counter)}、{content}{newline}"
+            new_lines.append(numbered_line)
         else:
             new_lines.append(raw_line)
 

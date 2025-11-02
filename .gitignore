@@ -26,3 +26,9 @@ share/python-wheels/
 MANIFEST
 *.pyc
 *.pyo
+
+# Backup files
+*.backup
+*.bak
+*.orig
+*~

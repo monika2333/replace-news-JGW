@@ -71,6 +71,42 @@ def parse_summary_file(path: Path) -> "OrderedDict[str, List[str]]":
     return categories
 
 
+def get_existing_entries(merged_path: Path) -> "OrderedDict[str, List[str]]":
+    """Read existing merged file and extract all entries."""
+    if not merged_path.exists():
+        return OrderedDict()
+    return parse_summary_file(merged_path)
+
+
+def get_new_entries(
+    segment_categories: "OrderedDict[str, List[str]]",
+    existing_categories: "OrderedDict[str, List[str]]",
+) -> "OrderedDict[str, List[str]]":
+    """Filter out entries that already exist in the merged file."""
+    new_categories: "OrderedDict[str, List[str]]" = OrderedDict()
+
+    # Create a set of existing entry texts for quick lookup
+    existing_entries_set: Dict[str, set] = {}
+    for label, entries in existing_categories.items():
+        existing_entries_set[label] = set(entries)
+
+    # Find new entries in each category
+    for label, entries in segment_categories.items():
+        new_entries = []
+        if label in existing_entries_set:
+            for entry in entries:
+                if entry not in existing_entries_set[label]:
+                    new_entries.append(entry)
+        else:
+            # New category that doesn't exist in merged file
+            new_entries = entries
+
+        if new_entries:
+            new_categories[label] = new_entries
+
+    return new_categories
+
+
 def merge_categories(parsed_files: Iterable["OrderedDict[str, List[str]]"]) -> "OrderedDict[str, List[str]]":
     merged: "OrderedDict[str, List[str]]" = OrderedDict()
     for category_map in parsed_files:
@@ -100,6 +136,35 @@ def write_merged_file(
     return output_path
 
 
+def append_to_merged_file(
+    merged_path: Path,
+    new_categories: "OrderedDict[str, List[str]]",
+    existing_categories: "OrderedDict[str, List[str]]",
+) -> None:
+    """Append new entries to an existing merged file, updating category counts."""
+    # Read the existing merged file to update it
+    updated_categories = OrderedDict(existing_categories)
+
+    # Add new entries to existing categories or create new ones
+    for label, entries in new_categories.items():
+        if label in updated_categories:
+            updated_categories[label].extend(entries)
+        else:
+            updated_categories[label] = entries
+
+    # Rewrite the entire file with updated counts
+    with merged_path.open("w", encoding="utf-8", newline="\n") as handle:
+        first_category = True
+        for label, entries in updated_categories.items():
+            if not first_category:
+                handle.write("\n")
+            first_category = False
+            handle.write(f"{label}共 {len(entries)} 条\n\n")
+            for entry in entries:
+                handle.write(entry.rstrip())
+                handle.write("\n\n")
+
+
 def merge_all(
     root: Path,
     output_root: Path,
@@ -116,18 +181,44 @@ def merge_all(
         output_root.mkdir(parents=True, exist_ok=True)
 
     for date_key, paths in sorted(groups.items()):
-        parsed = [parse_summary_file(path) for path in paths]
-        merged = merge_categories(parsed)
-        if not merged:
-            print(f"[{date_key}] Skipped: no categories detected.")
-            continue
         output_path = output_root / f"high_score_summaries_{date_key}{suffix}.txt"
+
+        # Check if merged file exists and read existing entries
+        existing_categories = get_existing_entries(output_path)
+
+        # If file exists and we're not using --overwrite, do incremental merge
         if output_path.exists() and not overwrite:
-            print(f"[{date_key}] Skipped: {output_path.name} already exists. Use --overwrite to replace.")
-            continue
-        write_merged_file(date_key, merged, output_root, suffix)
-        counts = ", ".join(f"{label}={len(entries)}" for label, entries in merged.items())
-        print(f"[{date_key}] Wrote {output_path.name} ({counts}).")
+            # Parse all segment files
+            all_new_categories: "OrderedDict[str, List[str]]" = OrderedDict()
+            for path in paths:
+                segment_categories = parse_summary_file(path)
+                # Filter to only get new entries
+                new_categories = get_new_entries(segment_categories, existing_categories)
+                # Merge these new entries
+                for label, entries in new_categories.items():
+                    all_new_categories.setdefault(label, []).extend(entries)
+
+            if not all_new_categories:
+                counts = ", ".join(f"{label}={len(entries)}" for label, entries in existing_categories.items())
+                print(f"[{date_key}] Already up to date ({counts}).")
+                continue
+
+            # Append new entries to existing merged file
+            append_to_merged_file(output_path, all_new_categories, existing_categories)
+            final_counts = ", ".join(f"{label}={len(entries)}" for label, entries in get_existing_entries(output_path).items())
+            print(f"[{date_key}] Appended to {output_path.name} (+{sum(len(e) for e in all_new_categories.values())} new entries, total {final_counts}).")
+        else:
+            # Normal merge (create new or overwrite)
+            parsed = [parse_summary_file(path) for path in paths]
+            merged = merge_categories(parsed)
+            if not merged:
+                print(f"[{date_key}] Skipped: no categories detected.")
+                continue
+            write_merged_file(date_key, merged, output_root, suffix)
+            counts = ", ".join(f"{label}={len(entries)}" for label, entries in merged.items())
+            action = "Overwrote" if output_path.exists() else "Wrote"
+            print(f"[{date_key}] {action} {output_path.name} ({counts}).")
+
         if delete_sources:
             for src in paths:
                 try:

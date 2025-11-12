@@ -49,7 +49,6 @@ def transform_text(text: str) -> Tuple[str, bool]:
     text = text.replace("北青热点", "北京青年报")
     text = text.replace("中新网", "中国新闻网")
     text = text.replace("中新社", "中国新闻社")
-    text = text.replace("京报网", "北京日报")
     text = text.replace("新京报社", "新京报")
     text = text.replace("已获", "获")
     text = text.replace("次评论", "条评论")

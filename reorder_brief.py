@@ -10,7 +10,7 @@ CATEGORY_RULES: Sequence[Tuple[str, Tuple[str, ...]]] = (
     (
         "市委教委",
         (
-            "市委教委",
+            "市委",
             "市委教育工委",
             "市教委",
             "教工委",

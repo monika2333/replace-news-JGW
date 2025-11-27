@@ -13,8 +13,15 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Mapping
 
 FILENAME_RE = re.compile(r"^high_score_summaries_(\d{4}_\d{2}_\d{2})\((\d+)\)\.txt$")
-ALLOWED_CATEGORIES = {"【京内正面】", "【京内负面】", "【京外正面】", "【京外负面】"}
-CATEGORY_HEADER_RE = re.compile(r"^(【京内正面】|【京内负面】|【京外正面】|【京外负面】)\\s*$")
+ALLOWED_CATEGORIES = {
+    "【\u4eac\u5185\u6b63\u9762】",
+    "【\u4eac\u5185\u8d1f\u9762】",
+    "【\u4eac\u5916\u6b63\u9762】",
+    "【\u4eac\u5916\u8d1f\u9762】",
+}
+CATEGORY_HEADER_RE = re.compile(
+    r"^(【\u4eac\u5185\u6b63\u9762】|【\u4eac\u5185\u8d1f\u9762】|【\u4eac\u5916\u6b63\u9762】|【\u4eac\u5916\u8d1f\u9762】)"
+)
 ANY_HEADER_RE = re.compile(r"^【[^】]+】")
 
 

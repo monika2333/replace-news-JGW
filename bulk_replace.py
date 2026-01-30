@@ -37,7 +37,8 @@ def remove_book_title_marks(text: str) -> str:
 def transform_text(text: str) -> Tuple[str, bool]:
     """Apply all replacements; return updated text and a changed flag."""
     original = text
-    text = text.replace("来源：", "")
+    text = text.replace("-千龙网·中国首都网", "")
+    text = text.replace("（千龙网·中国首都网）", "（千龙网）")
     text = text.replace("北京日报客户端", "北京日报")
     text = text.replace("央视新闻客户端", "央视新闻")
     text = text.replace("@央视新闻", "央视新闻")
@@ -50,8 +51,8 @@ def transform_text(text: str) -> Tuple[str, bool]:
     text = text.replace("中新网", "中国新闻网")
     text = text.replace("中新社", "中国新闻社")
     text = text.replace("新京报社", "新京报")
-    text = text.replace("已获", "获")
-    text = text.replace("次评论", "条评论")
+    text = text.replace("未来网高校", "未来网")
+    text = text.replace("中国教育报-中国教育新闻网", "中国教育报")
     text = text.translate(ASCII_TO_CN_PARENS)
     text = remove_book_title_marks(text)
     text = CLOSING_PAREN_SPACE_RE.sub("", text)

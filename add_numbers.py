@@ -6,45 +6,21 @@ import pathlib
 import re
 from typing import List, Sequence, Tuple
 
-CHINESE_NUMS = [
-    "",
-    "一",
-    "二",
-    "三",
-    "四",
-    "五",
-    "六",
-    "七",
-    "八",
-    "九",
-    "十",
-    "十一",
-    "十二",
-    "十三",
-    "十四",
-    "十五",
-    "十六",
-    "十七",
-    "十八",
-    "十九",
-    "二十",
-    "二十一",
-    "二十二",
-    "二十三",
-    "二十四",
-    "二十五",
-    "二十六",
-    "二十七",
-    "二十八",
-    "二十九",
-    "三十",
-]
+CHINESE_DIGITS: Tuple[str, ...] = ("", "一", "二", "三", "四", "五", "六", "七", "八", "九")
 
 
 def chinese_number(num: int) -> str:
     """将阿拉伯数字转换为中文数词。"""
-    if 0 <= num < len(CHINESE_NUMS):
-        return CHINESE_NUMS[num]
+    if 0 <= num < len(CHINESE_DIGITS):
+        return CHINESE_DIGITS[num]
+
+    if 10 <= num <= 99:
+        tens, ones = divmod(num, 10)
+        tens_part = "十" if tens == 1 else f"{CHINESE_DIGITS[tens]}十"
+        if ones == 0:
+            return tens_part
+        return f"{tens_part}{CHINESE_DIGITS[ones]}"
+
     return str(num)
 
 
@@ -87,7 +63,7 @@ def number_news_items(lines: Sequence[str]) -> Tuple[List[str], int]:
             news_counter += 1
 
             # 检查是否已有序号前缀
-            existing_number_match = re.match(r"^[一二三四五六七八九十]+、", stripped_line)
+            existing_number_match = re.match(r"^([一二三四五六七八九十]+|\d+)、", stripped_line)
 
             # 总是重新编号（无论是否已有序号）
             if raw_line.endswith("\r\n"):
